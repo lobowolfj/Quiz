@@ -491,19 +491,13 @@
 
   <script>
     // ==========================================================
-    // 1. CONFIGURAÇÕES (PREENCHA COM SEUS DADOS DO SUPABASE)
+    // 1. CONFIGURAÇÕES DO SUPABASE E SENHA DO ADM
     // ==========================================================
-    const SUPABASE_URL = 'SUA_SUPABASE_URL_AQUI';
-    const SUPABASE_ANON_KEY = 'SUA_SUPABASE_ANON_KEY_AQUI';
-    const SENHA_ADM = 'admin123'; // Troque a senha do ADM aqui se quiser
+    const SUPABASE_URL = 'https://edfhegkbjsapewewyrrz.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_EkYL0Kbn5IluxCvPjDIUkQ_jEH__ZyZ';
+    const SENHA_ADM = 'admin123'; // Senha para entrar na aba ADM
 
-    const supabaseConfigurado =
-      SUPABASE_URL !== 'SUA_SUPABASE_URL_AQUI' &&
-      SUPABASE_ANON_KEY !== 'SUA_SUPABASE_ANON_KEY_AQUI';
-
-    const supabaseClient = supabaseConfigurado
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-      : null;
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ==========================================================
     // 2. BANCO DE QUESTÕES (PDF: Afro - Das origens aos destinos)
@@ -621,7 +615,6 @@
       return div.innerHTML;
     }
 
-    // Botões de perfil e retorno
     document.getElementById("choose-student-btn").addEventListener("click", () => {
       showScreen("studentStart");
       document.getElementById("player-name").focus();
@@ -728,7 +721,7 @@
         btn.disabled = true;
         if (idx === q.answer) {
           btn.classList.add("correct");
-        } else if (idx === selectedIdx) {
+            } else if (idx === selectedIdx) {
           btn.classList.add("wrong");
         } else {
           btn.classList.add("dimmed");
@@ -767,20 +760,15 @@
       document.getElementById("student-finish-hits").textContent = `Você acertou ${correctCount} de ${questions.length} perguntas.`;
 
       const statusEl = document.getElementById("student-db-status");
-
-      if (!supabaseClient) {
-        statusEl.textContent = "Aviso: Supabase ainda não configurado no código.";
-        return;
-      }
-
       statusEl.textContent = "Enviando sua pontuação...";
+
       const { error } = await supabaseClient
         .from("pontuacoes_quiz")
         .insert([{ nome: playerName, pontuacao: score, acertos: correctCount }]);
 
       if (error) {
         console.error(error);
-        statusEl.textContent = "Erro ao enviar pontuação. Avise o professor.";
+        statusEl.textContent = "Erro ao enviar pontuação: " + error.message;
       } else {
         statusEl.textContent = "Pontuação enviada para o placar do ADM!";
       }
@@ -813,12 +801,6 @@
       const rankingListEl = document.getElementById("ranking-list");
       const statusEl = document.getElementById("adm-db-status");
 
-      if (!supabaseClient) {
-        winnerNameEl.textContent = "Supabase não configurado";
-        winnerScoreEl.textContent = "Preencha SUPABASE_URL e SUPABASE_ANON_KEY no código.";
-        return;
-      }
-
       const { data, error } = await supabaseClient
         .from("pontuacoes_quiz")
         .select("nome, pontuacao, acertos")
@@ -827,7 +809,7 @@
 
       if (error) {
         console.error(error);
-        statusEl.textContent = "Erro ao buscar dados do Supabase.";
+        statusEl.textContent = "Erro ao buscar dados: " + error.message;
         return;
       }
 
@@ -841,18 +823,15 @@
         return;
       }
 
-      // Vencedor (1º lugar)
       const winner = data[0];
       winnerNameEl.textContent = winner.nome;
       winnerScoreEl.textContent = `${winner.pontuacao} pontos (${winner.acertos}/10 acertos)`;
 
-      // Estatísticas
       const total = data.length;
       const avg = Math.round(data.reduce((acc, item) => acc + item.pontuacao, 0) / total);
       statTotalEl.textContent = total;
       statAvgEl.textContent = `${avg} pts`;
 
-      // Ranking completo
       rankingListEl.innerHTML = data
         .map((item, idx) => `
           <li class="ranking-item">
