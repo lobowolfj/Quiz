@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz: Afro - Das origens aos destinos</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #f5f5f5;
+      --muted: #b3b3b3;
+      --gold: #f59e0b;
+      --green: #16a34a;
+      --red: #dc2626;
+      --opt1: #e11d48;
+      --opt2: #2563eb;
+      --opt3: #d97706;
+      --opt4: #059669;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #2a1810, var(--bg) 65%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+
+    /* Botões de escolha de perfil */
+    .role-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 550px) {
+      .role-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .role-card {
+      background: #262626;
+      border: 2px solid #3f3f46;
+      border-radius: 14px;
+      padding: 26px 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.2s, background 0.2s;
+      color: var(--text);
+    }
+
+    .role-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--gold);
+      background: #2c241b;
+    }
+
+    .role-icon {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .role-title {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .role-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    /* Inputs e Botões */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 2px solid #3f3f46;
+      background: #141414;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--gold);
+    }
+
+    .btn {
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      width: 100%;
+    }
+
+    .btn:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      color: #111;
+    }
+
+    .btn-secondary {
+      background: #2e2e32;
+      color: #fff;
+      margin-top: 10px;
+    }
+
+    /* Quiz */
+    .quiz-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      font-weight: bold;
+    }
+
+    .timer-badge {
+      background: #27272a;
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 1rem;
+    }
+
+    .timer-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: #333;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+
+    .timer-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--gold);
+      transition: width 1s linear;
+    }
+
+    .question-text {
+      font-size: 1.3rem;
+      margin-bottom: 22px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .option-btn {
+      padding: 18px 16px;
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      transform: scale(1.02);
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    .opt-0 { background: var(--opt1); }
+    .opt-1 { background: var(--opt2); }
+    .opt-2 { background: var(--opt3); }
+    .opt-3 { background: var(--opt4); }
+
+    .option-btn.correct {
+      background: var(--green) !important;
+      box-shadow: 0 0 0 3px #bbf7d0;
+    }
+
+    .option-btn.wrong {
+      background: var(--red) !important;
+      opacity: 0.65;
+    }
+
+    .option-btn.dimmed {
+      opacity: 0.35;
+    }
+
+    .feedback {
+      text-align: center;
+      margin-top: 18px;
+      font-weight: bold;
+      min-height: 24px;
+      font-size: 1.05rem;
+    }
+
+    /* Resultado do Aluno */
+    .student-finish-box {
+      background: #262626;
+      border: 1px solid #3f3f46;
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .student-points {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: var(--gold);
+      margin: 10px 0;
+    }
+
+    /* Painel ADM */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      background: #262626;
+      padding: 14px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      margin-top: 4px;
+    }
+
+    .winner-box {
+      background: linear-gradient(135deg, #422006, #1c1917);
+      border: 2px solid var(--gold);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .winner-label {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+
+    .winner-name {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .winner-score {
+      font-size: 1.15rem;
+      color: #fde68a;
+      margin-top: 4px;
+    }
+
+    .adm-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .adm-controls .btn {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .ranking-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .ranking-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #262626;
+      padding: 12px 16px;
+      border-radius: 8px;
+    }
+
+    .ranking-item:first-child {
+      border-left: 4px solid var(--gold);
+    }
+
+    .status-msg {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 1. TELA DE ESCOLHA: ALUNO OU ADM -->
+    <section id="role-screen">
+      <h1>Quiz: Afro — Das origens aos destinos</h1>
+      <p class="subtitle">Selecione como deseja acessar</p>
+
+      <div class="role-grid">
+        <button class="role-card" id="choose-student-btn">
+          <span class="role-icon">🎓</span>
+          <div class="role-title">Sou Aluno</div>
+          <div class="role-desc">Entrar com seu nome e responder ao quiz</div>
+        </button>
+
+        <button class="role-card" id="choose-adm-btn">
+          <span class="role-icon">🏆</span>
+          <div class="role-title">Sou ADM</div>
+          <div class="role-desc">Ver vencedor, placar ao vivo e estatísticas</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. TELA DE ENTRADA DO ALUNO -->
+    <section id="student-start-screen" class="hidden">
+      <h1>Área do Aluno</h1>
+      <p class="subtitle">10 perguntas • 20 segundos por questão</p>
+
+      <div class="input-group">
+        <label for="player-name">Digite seu nome completo:</label>
+        <input type="text" id="player-name" placeholder="Ex: Maria Silva" maxlength="40" />
+        <button class="btn btn-primary" id="start-quiz-btn">Iniciar Quiz</button>
+        <button class="btn btn-secondary back-home-btn">Voltar</button>
+      </div>
+    </section>
+
+    <!-- 3. TELA DO QUIZ (SOMENTE ALUNO) -->
+    <section id="quiz-screen" class="hidden">
+      <div class="quiz-header">
+        <span id="question-counter">Pergunta 1 / 10</span>
+        <span id="live-score">Pontos: 0</span>
+        <span class="timer-badge" id="timer-text">20s</span>
+      </div>
+
+      <div class="timer-bar-bg">
+        <div class="timer-bar-fill" id="timer-bar"></div>
+      </div>
+
+      <h2 class="question-text" id="question-text"></h2>
+      <div class="options-grid" id="options-container"></div>
+      <div class="feedback" id="feedback"></div>
+    </section>
+
+    <!-- 4. TELA FINAL DO ALUNO (SEM PLACAR GERAL) -->
+    <section id="student-finish-screen" class="hidden">
+      <h1>Quiz Finalizado!</h1>
+      <div class="student-finish-box">
+        <p id="student-finish-name"></p>
+        <div class="student-points" id="student-finish-score">0 pts</div>
+        <p id="student-finish-hits"></p>
+        <p class="status-msg" id="student-db-status"></p>
+      </div>
+      <button class="btn btn-primary back-home-btn">Voltar ao Início</button>
+    </section>
+
+    <!-- 5. LOGIN DO ADM -->
+    <section id="adm-login-screen" class="hidden">
+      <h1>Acesso ADM</h1>
+      <p class="subtitle">Digite a senha do administrador para abrir o placar</p>
+
+      <div class="input-group">
+        <input type="password" id="adm-password" placeholder="Senha do ADM" />
+        <button class="btn btn-primary" id="adm-login-btn">Entrar no Painel</button>
+        <button class="btn btn-secondary back-home-btn">Voltar</button>
+      </div>
+      <p class="status-msg" id="adm-login-error" style="color: #f87171;"></p>
+    </section>
+
+    <!-- 6. PAINEL ADM (PLACAR E VENCEDOR) -->
+    <section id="adm-panel-screen" class="hidden">
+      <h1>Painel ADM — Placar Geral</h1>
+      <p class="subtitle">Atualização automática a cada 5 segundos</p>
+
+      <div class="winner-box">
+        <div class="winner-label">🏆 Vencedor Atual (1º Lugar)</div>
+        <div class="winner-name" id="winner-name">Carregando...</div>
+        <div class="winner-score" id="winner-score"></div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Participantes</div>
+          <div class="stat-value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Média de Pontos</div>
+          <div class="stat-value" id="stat-avg">0</div>
+        </div>
+      </div>
+
+      <div class="adm-controls">
+        <button class="btn btn-primary" id="refresh-ranking-btn">Atualizar Agora</button>
+        <button class="btn btn-secondary back-home-btn" style="margin-top: 0;">Sair do ADM</button>
+      </div>
+
+      <h3 style="margin-bottom: 10px;">Ranking Completo</h3>
+      <ul class="ranking-list" id="ranking-list"></ul>
+      <p class="status-msg" id="adm-db-status"></p>
+    </section>
+  </div>
+
+  <script>
+    // ==========================================================
+    // 1. CONFIGURAÇÕES (PREENCHA COM SEUS DADOS DO SUPABASE)
+    // ==========================================================
+    const SUPABASE_URL = 'SUA_SUPABASE_URL_AQUI';
+    const SUPABASE_ANON_KEY = 'SUA_SUPABASE_ANON_KEY_AQUI';
+    const SENHA_ADM = 'admin123'; // Troque a senha do ADM aqui se quiser
+
+    const supabaseConfigurado =
+      SUPABASE_URL !== 'SUA_SUPABASE_URL_AQUI' &&
+      SUPABASE_ANON_KEY !== 'SUA_SUPABASE_ANON_KEY_AQUI';
+
+    const supabaseClient = supabaseConfigurado
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // ==========================================================
+    // 2. BANCO DE QUESTÕES (PDF: Afro - Das origens aos destinos)
+    // ==========================================================
+    const questions = [
+      {
+        question: "Qual conceito central mostra como a cultura negra impulsiona viagens e a economia local?",
+        options: ["Afroturismo", "Ecoturismo rural", "Turismo de negócios", "Intercâmbio acadêmico"],
+        answer: 0
+      },
+      {
+        question: "Em quais localidades da Bahia o documentário concentra grande parte de suas histórias?",
+        options: [
+          "Chapada Diamantina e Ilhéus",
+          "Salvador e Recôncavo Baiano",
+          "Porto Seguro e Trancoso",
+          "Barreiras e Vitória da Conquista"
+        ],
+        answer: 1
+      },
+      {
+        question: "Qual prato tradicional associado à história de mulheres negras nas ruas é citado no filme?",
+        options: ["Feijoada", "Moqueca capixaba", "Acarajé", "Baião de dois"],
+        answer: 2
+      },
+      {
+        question: "Qual prato ligado a Cachoeira no Recôncavo aparece como atração cultural e gastronômica?",
+        options: ["Caruru", "Vatapá", "Sarapatel", "Maniçoba"],
+        answer: 3
+      },
+      {
+        question: "Qual grupo tradicional é lembrado ao tratar de fé, memória e celebrações culturais?",
+        options: [
+          "Irmandade da Boa Morte",
+          "Ordem Terceira do Carmo",
+          "Congada de Minas",
+          "Folia de Reis"
+        ],
+        answer: 0
+      },
+      {
+        question: "Qual bloco afro histórico é mencionado a partir do legado de Mãe Hilda Jitolú?",
+        options: ["Olodum", "Ilê Aiyê", "Filhos de Gandhy", "Muzenza"],
+        answer: 1
+      },
+      {
+        question: "Segundo o documentário, o que o uso de tranças e a estética afro representam?",
+        options: [
+          "Apenas tendência passageira",
+          "Padrão estético europeu",
+          "Identidade e afirmação cultural",
+          "Uniforme escolar obrigatório"
+        ],
+        answer: 2
+      },
+      {
+        question: "Como a capoeira é retratada no documentário em relação à história do povo negro?",
+        options: [
+          "Apenas esporte olímpico",
+          "Dança trazida da Europa",
+          "Atividade recreativa recente",
+          "Expressão cultural e resistência"
+        ],
+        answer: 3
+      },
+      {
+        question: "Qual é um dos efeitos econômicos do afroturismo apontados para os moradores locais?",
+        options: [
+          "Geração de renda com cultura local",
+          "Substituição do comércio local",
+          "Aumento de impostos municipais",
+          "Fechamento de feiras livres"
+        ],
+        answer: 0
+      },
+      {
+        question: "Qual postura o documentário incentiva nas pessoas que participam dessas vivências?",
+        options: [
+          "Observação distante e passiva",
+          "Escuta e valorização ancestral",
+          "Consumo rápido sem diálogo",
+          "Padronização das tradições"
+        ],
+        answer: 1
+      }
+    ];
+
+    // ==========================================================
+    // 3. ELEMENTOS E NAVEGAÇÃO ENTRE TELAS
+    // ==========================================================
+    const screens = {
+      role: document.getElementById("role-screen"),
+      studentStart: document.getElementById("student-start-screen"),
+      quiz: document.getElementById("quiz-screen"),
+      studentFinish: document.getElementById("student-finish-screen"),
+      admLogin: document.getElementById("adm-login-screen"),
+      admPanel: document.getElementById("adm-panel-screen")
+    };
+
+    let admAutoRefresh = null;
+
+    function showScreen(name) {
+      Object.values(screens).forEach(s => s.classList.add("hidden"));
+      screens[name].classList.remove("hidden");
+
+      if (name !== "admPanel" && admAutoRefresh) {
+        clearInterval(admAutoRefresh);
+        admAutoRefresh = null;
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Botões de perfil e retorno
+    document.getElementById("choose-student-btn").addEventListener("click", () => {
+      showScreen("studentStart");
+      document.getElementById("player-name").focus();
+    });
+
+    document.getElementById("choose-adm-btn").addEventListener("click", () => {
+      document.getElementById("adm-password").value = "";
+      document.getElementById("adm-login-error").textContent = "";
+      showScreen("admLogin");
+      document.getElementById("adm-password").focus();
+    });
+
+    document.querySelectorAll(".back-home-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        clearInterval(timerInterval);
+        showScreen("role");
+      });
+    });
+
+    // ==========================================================
+    // 4. LÓGICA DO ALUNO (QUIZ)
+    // ==========================================================
+    const TIME_LIMIT = 20;
+    let playerName = "";
+    let currentIndex = 0;
+    let score = 0;
+    let correctCount = 0;
+    let timeLeft = TIME_LIMIT;
+    let timerInterval = null;
+
+    const questionCounter = document.getElementById("question-counter");
+    const liveScore = document.getElementById("live-score");
+    const timerText = document.getElementById("timer-text");
+    const timerBar = document.getElementById("timer-bar");
+    const questionText = document.getElementById("question-text");
+    const optionsContainer = document.getElementById("options-container");
+    const feedbackEl = document.getElementById("feedback");
+
+    document.getElementById("start-quiz-btn").addEventListener("click", () => {
+      const input = document.getElementById("player-name");
+      const name = input.value.trim();
+      if (!name) {
+        alert("Por favor, digite seu nome antes de começar.");
+        input.focus();
+        return;
+      }
+
+      playerName = name;
+      currentIndex = 0;
+      score = 0;
+      correctCount = 0;
+
+      showScreen("quiz");
+      loadQuestion();
+    });
+
+    function loadQuestion() {
+      clearInterval(timerInterval);
+      const q = questions[currentIndex];
+
+      questionCounter.textContent = `Pergunta ${currentIndex + 1} / ${questions.length}`;
+      liveScore.textContent = `Pontos: ${score}`;
+      questionText.textContent = q.question;
+      feedbackEl.textContent = "";
+      optionsContainer.innerHTML = "";
+
+      q.options.forEach((optText, idx) => {
+        const btn = document.createElement("button");
+        btn.className = `option-btn opt-${idx}`;
+        btn.textContent = `${idx + 1}. ${optText}`;
+        btn.addEventListener("click", () => selectAnswer(idx));
+        optionsContainer.appendChild(btn);
+      });
+
+      startTimer();
+    }
+
+    function startTimer() {
+      timeLeft = TIME_LIMIT;
+      timerText.textContent = `${timeLeft}s`;
+      timerBar.style.transition = "none";
+      timerBar.style.width = "100%";
+      void timerBar.offsetWidth;
+      timerBar.style.transition = "width 1s linear";
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerText.textContent = `${timeLeft}s`;
+        timerBar.style.width = `${(timeLeft / TIME_LIMIT) * 100}%`;
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          selectAnswer(-1);
+        }
+      }, 1000);
+    }
+
+    function selectAnswer(selectedIdx) {
+      clearInterval(timerInterval);
+      const q = questions[currentIndex];
+      const buttons = optionsContainer.querySelectorAll(".option-btn");
+
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.answer) {
+          btn.classList.add("correct");
+        } else if (idx === selectedIdx) {
+          btn.classList.add("wrong");
+        } else {
+          btn.classList.add("dimmed");
+        }
+      });
+
+      if (selectedIdx === q.answer) {
+        const gained = 500 + timeLeft * 25;
+        score += gained;
+        correctCount++;
+        liveScore.textContent = `Pontos: ${score}`;
+        feedbackEl.style.color = "#4ade80";
+        feedbackEl.textContent = `Correto! +${gained} pontos`;
+      } else if (selectedIdx === -1) {
+        feedbackEl.style.color = "#f87171";
+        feedbackEl.textContent = "Tempo esgotado!";
+      } else {
+        feedbackEl.style.color = "#f87171";
+        feedbackEl.textContent = "Incorreto!";
+      }
+
+      setTimeout(() => {
+        currentIndex++;
+        if (currentIndex < questions.length) {
+          loadQuestion();
+        } else {
+          finishQuiz();
+        }
+      }, 1500);
+    }
+
+    async function finishQuiz() {
+      showScreen("studentFinish");
+      document.getElementById("student-finish-name").textContent = `Parabéns, ${playerName}!`;
+      document.getElementById("student-finish-score").textContent = `${score} pontos`;
+      document.getElementById("student-finish-hits").textContent = `Você acertou ${correctCount} de ${questions.length} perguntas.`;
+
+      const statusEl = document.getElementById("student-db-status");
+
+      if (!supabaseClient) {
+        statusEl.textContent = "Aviso: Supabase ainda não configurado no código.";
+        return;
+      }
+
+      statusEl.textContent = "Enviando sua pontuação...";
+      const { error } = await supabaseClient
+        .from("pontuacoes_quiz")
+        .insert([{ nome: playerName, pontuacao: score, acertos: correctCount }]);
+
+      if (error) {
+        console.error(error);
+        statusEl.textContent = "Erro ao enviar pontuação. Avise o professor.";
+      } else {
+        statusEl.textContent = "Pontuação enviada para o placar do ADM!";
+      }
+    }
+
+    // ==========================================================
+    // 5. LÓGICA DO ADM (LOGIN + PLACAR + ESTATÍSTICAS)
+    // ==========================================================
+    document.getElementById("adm-login-btn").addEventListener("click", () => {
+      const pass = document.getElementById("adm-password").value;
+      const errEl = document.getElementById("adm-login-error");
+
+      if (pass !== SENHA_ADM) {
+        errEl.textContent = "Senha incorreta.";
+        return;
+      }
+
+      showScreen("admPanel");
+      loadAdmDashboard();
+      admAutoRefresh = setInterval(loadAdmDashboard, 5000);
+    });
+
+    document.getElementById("refresh-ranking-btn").addEventListener("click", loadAdmDashboard);
+
+    async function loadAdmDashboard() {
+      const winnerNameEl = document.getElementById("winner-name");
+      const winnerScoreEl = document.getElementById("winner-score");
+      const statTotalEl = document.getElementById("stat-total");
+      const statAvgEl = document.getElementById("stat-avg");
+      const rankingListEl = document.getElementById("ranking-list");
+      const statusEl = document.getElementById("adm-db-status");
+
+      if (!supabaseClient) {
+        winnerNameEl.textContent = "Supabase não configurado";
+        winnerScoreEl.textContent = "Preencha SUPABASE_URL e SUPABASE_ANON_KEY no código.";
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from("pontuacoes_quiz")
+        .select("nome, pontuacao, acertos")
+        .order("pontuacao", { ascending: false })
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        statusEl.textContent = "Erro ao buscar dados do Supabase.";
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        winnerNameEl.textContent = "Aguardando alunos...";
+        winnerScoreEl.textContent = "Nenhuma pontuação registrada ainda.";
+        statTotalEl.textContent = "0";
+        statAvgEl.textContent = "0";
+        rankingListEl.innerHTML = "";
+        statusEl.textContent = "Placar atualizado.";
+        return;
+      }
+
+      // Vencedor (1º lugar)
+      const winner = data[0];
+      winnerNameEl.textContent = winner.nome;
+      winnerScoreEl.textContent = `${winner.pontuacao} pontos (${winner.acertos}/10 acertos)`;
+
+      // Estatísticas
+      const total = data.length;
+      const avg = Math.round(data.reduce((acc, item) => acc + item.pontuacao, 0) / total);
+      statTotalEl.textContent = total;
+      statAvgEl.textContent = `${avg} pts`;
+
+      // Ranking completo
+      rankingListEl.innerHTML = data
+        .map((item, idx) => `
+          <li class="ranking-item">
+            <span><strong>#${idx + 1}</strong> ${escapeHtml(item.nome)}</span>
+            <span><strong>${item.pontuacao} pts</strong> (${item.acertos}/10)</span>
+          </li>
+        `)
+        .join("");
+
+      const agora = new Date().toLocaleTimeString("pt-BR");
+      statusEl.textContent = `Última atualização às ${agora}`;
+    }
+  </script>
+</body>
+</html>
